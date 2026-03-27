@@ -1,8 +1,11 @@
-package com.example.anibey_codex_tfg.ui.welcome.ui
+package com.example.anibey_codex_tfg.ui.screens.welcome
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @HiltViewModel
-class WelcomeViewModel : ViewModel() {
+class WelcomeViewModel @Inject constructor(
+
+): ViewModel() {
 }

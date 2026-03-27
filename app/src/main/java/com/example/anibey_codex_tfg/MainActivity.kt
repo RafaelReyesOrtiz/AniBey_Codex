@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.anibey_codex_tfg.ui.common.theme.AniBey_Codex_TFGTheme
-import com.example.anibey_codex_tfg.ui.welcome.ui.WelcomeScreen
+import com.example.anibey_codex_tfg.ui.navigation.AnimaNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -20,10 +20,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             AniBey_Codex_TFGTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    WelcomeScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        onLoginSelected = {},
-                        onGuestSelected = {}
+                    AnimaNavHost(
+                        modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
