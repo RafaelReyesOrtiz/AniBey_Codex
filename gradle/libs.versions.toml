@@ -22,11 +22,22 @@ espressoCore = "3.7.0"
 ksp = "2.0.21-1.0.25"
 animationCoreLint = "1.10.6"
 
+firebaseBom = "33.4.0"
+datastore = "1.1.1"
+
 [libraries]
 # Android Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" } # Para guardar privilegios extra
+
+# DataStore (Persistencia local)
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
 # Compose BOM (Management de versiones de UI)
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
@@ -62,4 +73,5 @@ google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 # IMPORTANTE: Necesitas este plugin para que la navegación por objetos no falle
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version = "4.4.2" }
 

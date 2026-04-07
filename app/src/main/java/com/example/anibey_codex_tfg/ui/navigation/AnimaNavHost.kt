@@ -1,5 +1,6 @@
 package com.example.anibey_codex_tfg.ui.navigation
 
+import android.app.Activity
 import androidx.compose.animation.core.EaseInOutQuart
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -7,19 +8,46 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.anibey_codex_tfg.ui.login.ui.LoginScreen
+import com.example.anibey_codex_tfg.ui.screens.home.HomeScreen
 import com.example.anibey_codex_tfg.ui.screens.login.LoginViewModel
 import com.example.anibey_codex_tfg.ui.welcome.ui.WelcomeScreen
 
 @Composable
-fun AnimaNavHost(modifier : Modifier) {
+fun AnimaNavHost(
+    modifier : Modifier,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        val activity = context as? Activity
+        val intent = activity?.intent
+        val emailLink = intent?.data?.toString()
+
+        if (emailLink != null && viewModel.auth.isSignInWithEmailLink(emailLink)) {
+            val currentlyRegistering = viewModel.state.isRegistering
+
+            viewModel.completeSpiritLink(emailLink, isRegister = currentlyRegistering) {
+                if (currentlyRegistering) {
+                    navController.navigate(Screen.Welcome) { popUpTo(0) }
+                } else {
+                    navController.navigate(Screen.Home) {
+                        popUpTo(Screen.Welcome) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -73,6 +101,9 @@ fun AnimaNavHost(modifier : Modifier) {
                 },
                 modifier = modifier
             )
+        }
+        composable<Screen.Home> {
+            HomeScreen()
         }
     }
 }

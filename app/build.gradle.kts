@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dagger.hilt)
     alias(libs.plugins.google.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -55,6 +56,14 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Firebase (BOM gestiona las versiones automáticamente)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     // Navegación & Serialización
     implementation(libs.androidx.navigation.compose)

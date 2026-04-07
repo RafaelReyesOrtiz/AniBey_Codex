@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.anibey_codex_tfg" />
+                  <option name="mobileSdkAppId" value="1:188076603755:android:f36f2f06ef51f1f601342e" />
+                  <option name="projectId" value="anibeycodextfg" />
+                  <option name="projectNumber" value="188076603755" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

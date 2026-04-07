@@ -10,10 +10,12 @@ y el versionado utiliza Semantic Versioning.
 ## [0.0.3] - 2026-04-07
 
 ### Añadido
-- 
+- Separación entre login y registro
+- Inicio de sesión y registro real
 
 ### Modificado
 - Componente AnimaTextField para que se pueda ver la contraseña
+- Salir si no se quiere registrar o iniciar sesión
 
 ### Corregido
 - La validación del inicio y registro

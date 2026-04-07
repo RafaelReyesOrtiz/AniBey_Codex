@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188076603755",
+    "project_id": "anibeycodextfg",
+    "storage_bucket": "anibeycodextfg.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188076603755:android:f36f2f06ef51f1f601342e",
+        "android_client_info": {
+          "package_name": "com.example.anibey_codex_tfg"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1tlbavYiBDrYPjvtLGm3bKqVf5oNri30"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

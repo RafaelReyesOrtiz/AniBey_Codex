@@ -7,4 +7,6 @@ sealed interface Screen {
     data object Welcome : Screen
 
     @Serializable data class Login(val isRegister: Boolean) : Screen
+    @Serializable
+    data object Home : Screen
 }
