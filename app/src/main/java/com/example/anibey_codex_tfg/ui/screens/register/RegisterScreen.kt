@@ -62,7 +62,8 @@ fun RegisterScreen(
         onPasswordChange = viewModel::onPasswordChange,
         onSendVerification = viewModel::sendVerificationEmail,
         onCheckVerification = viewModel::checkVerificationStatus,
-        onFinalizePact = { viewModel.finalizeRegistration(onRegisterSuccess) },
+        onFinalizePact = viewModel::finalizeRegistration,
+        onRegisterSuccess = onRegisterSuccess,
         onBack = {
             if (state.currentStep == RegisterStep.EMAIL_ENTRY) onNavigateBack()
             else viewModel.editEmail()
@@ -318,7 +319,7 @@ private fun RegisterBottomBar(state: RegisterState, actions: RegisterActions) {
                 when (state.currentStep) {
                     RegisterStep.EMAIL_ENTRY -> actions.onSendVerification()
                     RegisterStep.VERIFY_PENDING -> actions.onCheckVerification()
-                    RegisterStep.FINALIZE_PACT -> actions.onFinalizePact { /* Success */ }
+                    RegisterStep.FINALIZE_PACT -> actions.onFinalizePact(actions.onRegisterSuccess)
                 }
             },
             modifier = Modifier

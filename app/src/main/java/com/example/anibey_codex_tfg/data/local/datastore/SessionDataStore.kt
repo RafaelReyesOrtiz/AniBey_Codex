@@ -18,17 +18,20 @@ class SessionDataStore @Inject constructor(
     companion object {
         val USER_EMAIL = stringPreferencesKey("user_email")
         val USER_NAME = stringPreferencesKey("user_name")
+        val USER_PHOTO_URL = stringPreferencesKey("user_photo_url")
     }
     val userData: Flow<UserProfile?> = context.dataStore.data.map { prefs ->
         UserProfile(
             email = prefs[USER_EMAIL] ?: "",
             username = prefs[USER_NAME] ?: "Viajero",
+            photoUrl = prefs[USER_PHOTO_URL]
         )
     }
     suspend fun saveSession(user: UserProfile) {
         context.dataStore.edit { prefs ->
             prefs[USER_EMAIL] = user.email
             prefs[USER_NAME] = user.username
+            prefs[USER_PHOTO_URL] = user.photoUrl ?: ""
         }
     }
     suspend fun clearSession() {

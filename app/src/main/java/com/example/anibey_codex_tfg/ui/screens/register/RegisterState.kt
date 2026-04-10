@@ -27,5 +27,6 @@ data class RegisterActions(
     val onSendVerification: () -> Unit = {},
     val onCheckVerification: () -> Unit = {},
     val onFinalizePact: (onSuccess: () -> Unit) -> Unit = { _ -> },
-    val onBack: () -> Unit = {}
+    val onBack: () -> Unit = {},
+    val onRegisterSuccess : () -> Unit = {}
 )

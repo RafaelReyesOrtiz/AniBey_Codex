@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.anibey_codex_tfg.ui.login.ui.LoginScreen
 import com.example.anibey_codex_tfg.ui.screens.home.HomeScreen
+import com.example.anibey_codex_tfg.ui.screens.profile.ProfileScreen
 import com.example.anibey_codex_tfg.ui.screens.register.RegisterScreen
 import com.example.anibey_codex_tfg.ui.welcome.ui.WelcomeScreen
 
@@ -56,7 +57,7 @@ fun AnimaNavHost(
         composable<Screen.Welcome> {
             WelcomeScreen(
                 onLoginSelected = { navController.navigate(Screen.Login) },
-                onGuestSelected = { /* Próximamente: Screen.Home */ },
+                onGuestSelected = { navController.navigate(Screen.Home) },
                 onRegisterSelected = { navController.navigate(Screen.Register) },
                 modifier = modifier
             )
@@ -68,7 +69,10 @@ fun AnimaNavHost(
                 viewModel = hiltViewModel(),
                 onNavigateBack = { navController.popBackStack() },
                 onLoginSuccess = {
-                    // Aquí navegarías a la pantalla principal
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Home> { inclusive = true }
+                        launchSingleTop = true
+                    }
                 },
                 modifier = modifier
             )
@@ -89,7 +93,22 @@ fun AnimaNavHost(
             )
         }
         composable<Screen.Home> {
-            HomeScreen()
+            HomeScreen(
+                viewModel = hiltViewModel(),
+                onNavigateToProfile = { navController.navigate(Screen.Profile) },
+                onLogout = {
+                    navController.navigate(Screen.Welcome) {
+                        popUpTo<Screen.Welcome> { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+        composable<Screen.Profile> {
+            ProfileScreen(
+                viewModel = hiltViewModel(),
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

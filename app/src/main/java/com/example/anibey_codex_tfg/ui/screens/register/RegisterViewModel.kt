@@ -1,5 +1,6 @@
 package com.example.anibey_codex_tfg.ui.screens.register
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,8 +27,6 @@ class RegisterViewModel @Inject constructor(
 
     var state by mutableStateOf(RegisterState())
         private set
-
-    // --- MANEJO DE INPUTS ---
 
     fun onEmailChange(newValue: String) {
         state = state.copy(email = newValue, emailError = null)
@@ -40,9 +40,6 @@ class RegisterViewModel @Inject constructor(
         state = state.copy(password = newValue, passwordError = null)
     }
 
-    // --- FASE 1: VERIFICACIÓN DEL EMAIL ---
-
-    // --- FASE 1: VERIFICACIÓN DEL EMAIL ---
     fun sendVerificationEmail() {
         val emailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(state.email).matches()
         if (!emailValid) {
@@ -52,24 +49,18 @@ class RegisterViewModel @Inject constructor(
 
         state = state.copy(isLoading = true)
 
-        // Intentamos crear el usuario
         auth.createUserWithEmailAndPassword(state.email, "temp_pass_anima_123")
             .addOnSuccessListener { result ->
-                // Caso A: Usuario nuevo creado con éxito
                 sendEmailAndProgress(result.user)
             }
             .addOnFailureListener { exception ->
                 if (exception is FirebaseAuthUserCollisionException) {
-                    // Caso B: El usuario ya existe en Auth.
-                    // Intentamos loguearlo con la pass temporal para ver si podemos reenviar
                     auth.signInWithEmailAndPassword(state.email, "temp_pass_anima_123")
                         .addOnSuccessListener { result ->
                             val user = result.user
                             if (user != null && !user.isEmailVerified) {
-                                // El usuario existe pero NO está verificado: Reenviamos y avanzamos
                                 sendEmailAndProgress(user)
                             } else {
-                                // El usuario existe y SÍ está verificado: Debe ir a Login
                                 state = state.copy(
                                     isLoading = false,
                                     emailError = "Este alma ya está vinculada. Ve al inicio de sesión."
@@ -77,7 +68,6 @@ class RegisterViewModel @Inject constructor(
                             }
                         }
                         .addOnFailureListener {
-                            // Si falla el login temporal, es que el usuario existe con OTRA contraseña real
                             state = state.copy(
                                 isLoading = false,
                                 emailError = "Este alma ya pertenece a otro viajero."
@@ -89,18 +79,28 @@ class RegisterViewModel @Inject constructor(
             }
     }
 
-    // Función auxiliar para no repetir código
     private fun sendEmailAndProgress(user: com.google.firebase.auth.FirebaseUser?) {
-        user?.sendEmailVerification()?.addOnSuccessListener {
-            state = state.copy(
-                isLoading = false,
-                currentStep = RegisterStep.VERIFY_PENDING,
-                emailError = null
-            )
-            startResendTimer()
+        if (user == null) {
+            state = state.copy(isLoading = false, emailError = "Error: Usuario no encontrado.")
+            return
         }
+
+        user.sendEmailVerification()
+            .addOnSuccessListener {
+                state = state.copy(
+                    isLoading = false,
+                    currentStep = RegisterStep.VERIFY_PENDING,
+                    emailError = null
+                )
+                startResendTimer()
+            }
+            .addOnFailureListener { exception ->
+                state = state.copy(
+                    isLoading = false,
+                    emailError = "No se pudo enviar el correo: ${exception.localizedMessage}"
+                )
+            }
     }
-    // --- FASE 2: COMPROBACIÓN DEL ESTADO ---
 
     fun checkVerificationStatus() {
         val user = auth.currentUser
@@ -111,10 +111,8 @@ class RegisterViewModel @Inject constructor(
 
         state = state.copy(isLoading = true)
 
-        // 1. Recargamos al usuario desde el servidor
         user.reload().addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // 2. Tras recargar, comprobamos el booleano
                 if (user.isEmailVerified) {
                     state = state.copy(
                         isLoading = false,
@@ -147,7 +145,7 @@ class RegisterViewModel @Inject constructor(
             state = state.copy(canResend = true)
         }
     }
-    // Función para cuando el usuario se equivoca de email
+
     fun editEmail() {
         auth.currentUser?.delete()?.addOnCompleteListener {
             state = state.copy(
@@ -161,40 +159,54 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    // --- FASE 3: PASSWORD Y FIRESTORE ---
-
     fun finalizeRegistration(onSuccess: () -> Unit) {
         if (state.password.length < 6 || state.username.isBlank()) {
             state = state.copy(
-                passwordError = "La clave debe tener al menos 6 carácteres.",
-                usernameError = "Todo viajero necesita un apodo."
+                passwordError = if (state.password.length < 6) "La clave debe tener al menos 6 carácteres." else null,
+                usernameError = if (state.username.isBlank()) "Todo viajero necesita un apodo." else null
             )
             return
         }
 
-        state = state.copy(isLoading = true)
-        val user = auth.currentUser
+        viewModelScope.launch {
+            state = state.copy(isLoading = true)
+            val user = auth.currentUser
 
-        // 1. Actualizamos a la contraseña real elegida por el usuario
-        user?.updatePassword(state.password)?.addOnSuccessListener {
+            if (user == null) {
+                state = state.copy(isLoading = false, passwordError = "Sesión perdida. Reintenta.")
+                return@launch
+            }
 
-            // 2. Creamos el perfil definitivo en la base de datos
-            val profile = UserProfile(
-                email = state.email,
-                username = state.username
-            )
+            try {
+                // 1. Actualizamos a la contraseña definitiva
+                Log.d("REGISTER", "Actualizando contraseña...")
+                user.updatePassword(state.password).await()
 
-            db.collection("users").document(user.uid).set(profile)
-                .addOnSuccessListener {
-                    viewModelScope.launch {
-                        sessionDataStore.saveSession(profile)
-                        state = state.copy(isLoading = false)
-                        onSuccess()
-                    }
-                }
-        }?.addOnFailureListener {
-            state =
-                state.copy(isLoading = false, passwordError = "Error al sellar el pacto místico.")
+                // 2. Creamos el perfil en Firestore
+                val profile = UserProfile(
+                    email = state.email,
+                    username = state.username,
+                    photoUrl = null
+                )
+                
+                Log.d("REGISTER", "Guardando en Firestore...")
+                // ESTA LÍNEA ES LA QUE SE QUEDABA PILLADA
+                db.collection("users").document(user.uid).set(profile).await()
+
+                // 3. Guardar sesión local
+                Log.d("REGISTER", "Guardando sesión local...")
+                sessionDataStore.saveSession(profile)
+
+                state = state.copy(isLoading = false)
+                onSuccess()
+
+            } catch (e: Exception) {
+                Log.e("REGISTER", "Error fatal: ${e.localizedMessage}")
+                state = state.copy(
+                    isLoading = false,
+                    passwordError = "Error: ${e.localizedMessage}. ¿Has activado Firestore en la Consola de Firebase?"
+                )
+            }
         }
     }
 }
