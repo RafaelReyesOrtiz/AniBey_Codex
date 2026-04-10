@@ -57,12 +57,15 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Firebase (BOM gestiona las versiones automáticamente)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation("com.google.firebase:firebase-storage-ktx")
 
-    // DataStore
     implementation(libs.androidx.datastore.preferences)
 
     // Navegación & Serialización
