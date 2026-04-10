@@ -28,8 +28,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.anibey_codex_tfg.R
 import com.example.anibey_codex_tfg.ui.common.theme.*
+import com.example.anibey_codex_tfg.ui.screens.welcome.WelcomeViewModel
 
 data class WelcomeActions(
     val onLoginClick: () -> Unit = {},
@@ -41,13 +43,16 @@ data class WelcomeActions(
 @Composable
 fun WelcomeScreen(
     modifier: Modifier = Modifier,
+    viewModel: WelcomeViewModel = hiltViewModel(),
     onLoginSelected: () -> Unit,
     onGuestSelected: () -> Unit,
     onRegisterSelected: () -> Unit
 ) {
     val actions = WelcomeActions(
         onLoginClick = onLoginSelected,
-        onGuestClick = onGuestSelected,
+        onGuestClick = {
+            viewModel.setGuestMode(onSuccess = onGuestSelected)
+        },
         onRegisterClick = onRegisterSelected
     )
     WelcomeScreenContent(modifier = modifier, actions = actions)

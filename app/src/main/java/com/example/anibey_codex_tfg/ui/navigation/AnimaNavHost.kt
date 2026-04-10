@@ -27,7 +27,6 @@ fun AnimaNavHost(
     NavHost(
         navController = navController,
         startDestination = Screen.Welcome,
-        // CONFIGURACIÓN DE ANIMACIONES GLOBALES
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it },
@@ -53,57 +52,62 @@ fun AnimaNavHost(
             ) + fadeOut(animationSpec = tween(600))
         }
     ) {
-        // RUTA: WELCOME
         composable<Screen.Welcome> {
             WelcomeScreen(
                 onLoginSelected = { navController.navigate(Screen.Login) },
-                onGuestSelected = { navController.navigate(Screen.Home) },
+                onGuestSelected = { 
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Welcome> { inclusive = true }
+                    }
+                },
                 onRegisterSelected = { navController.navigate(Screen.Register) },
                 modifier = modifier
             )
         }
 
-        // RUTA: LOGIN
         composable<Screen.Login> {
             LoginScreen(
                 viewModel = hiltViewModel(),
                 onNavigateBack = { navController.popBackStack() },
                 onLoginSuccess = {
                     navController.navigate(Screen.Home) {
-                        popUpTo<Screen.Home> { inclusive = true }
+                        popUpTo<Screen.Welcome> { inclusive = true }
                         launchSingleTop = true
                     }
                 },
                 modifier = modifier
             )
         }
+
         composable<Screen.Register> {
             RegisterScreen(
                 viewModel = hiltViewModel(),
                 onNavigateBack = { navController.popBackStack() },
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Welcome){
-                        popUpTo<Screen.Welcome> {
-                            inclusive = true
-                        }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Welcome> { inclusive = true }
                         launchSingleTop = true
                     }
                 },
                 modifier = modifier
             )
         }
+
         composable<Screen.Home> {
             HomeScreen(
                 viewModel = hiltViewModel(),
                 onNavigateToProfile = { navController.navigate(Screen.Profile) },
+                onNavigateToLogin = { navController.navigate(Screen.Login) },
+                onNavigateToRegister = { navController.navigate(Screen.Register) },
                 onLogout = {
                     navController.navigate(Screen.Welcome) {
-                        popUpTo<Screen.Welcome> { inclusive = true }
+                        popUpTo<Screen.Home> { inclusive = true }
                         launchSingleTop = true
                     }
                 }
             )
         }
+
         composable<Screen.Profile> {
             ProfileScreen(
                 viewModel = hiltViewModel(),

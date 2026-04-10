@@ -13,4 +13,5 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userProfile: Flow<UserProfile?> = sessionDataStore.userData
+    val isGuest: Flow<Boolean> = sessionDataStore.isGuest
 }
