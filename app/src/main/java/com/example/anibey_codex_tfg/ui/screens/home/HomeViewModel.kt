@@ -20,7 +20,7 @@ data class HomeUiState(
     val userProfile: UserProfile? = null,
     val isGuest: Boolean = false,
     val toastMessage: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = true
 )
 
 @HiltViewModel
@@ -34,37 +34,51 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        observeGuestStatus()
-        observeUserProfile()
+        observeSession()
     }
 
-    private fun observeGuestStatus() {
+    private fun observeSession() {
         viewModelScope.launch {
-            sessionDataStore.isGuest.collect { isGuest ->
-                _uiState.update { it.copy(isGuest = isGuest) }
-            }
-        }
-    }
-
-    private fun observeUserProfile() {
-        viewModelScope.launch {
-            val user = auth.currentUser
-            if (user != null) {
-                val docRef = db.collection("users").document(user.uid)
-                docRef.addSnapshotListener { snapshot, error ->
-                    if (error != null) return@addSnapshotListener
-                    if (snapshot != null && snapshot.exists()) {
-                        val profile = snapshot.toObject(UserProfile::class.java)
-                        _uiState.update { it.copy(userProfile = profile) }
-                        
-                        profile?.let {
-                            viewModelScope.launch { sessionDataStore.saveSession(it) }
-                        }
+            launch {
+                sessionDataStore.isGuest.collect { isGuest ->
+                    _uiState.update { it.copy(isGuest = isGuest) }
+                    if (isGuest) {
+                        _uiState.update { it.copy(isLoading = false) }
                     }
                 }
-            } else {
-                sessionDataStore.userData.collectLatest { profile ->
-                    _uiState.update { it.copy(userProfile = profile) }
+            }
+
+            launch {
+                val user = auth.currentUser
+                if (user != null) {
+                    val docRef = db.collection("users").document(user.uid)
+                    docRef.addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            _uiState.update { it.copy(isLoading = false) }
+                            return@addSnapshotListener
+                        }
+                        if (snapshot != null && snapshot.exists()) {
+                            val profile = snapshot.toObject(UserProfile::class.java)
+                            _uiState.update { it.copy(userProfile = profile, isLoading = false) }
+                            profile?.let {
+                                viewModelScope.launch { sessionDataStore.saveSession(it) }
+                            }
+                        } else {
+                            _uiState.update { it.copy(isLoading = false) }
+                        }
+                    }
+                } else {
+                    sessionDataStore.userData.collectLatest { profile ->
+                        _uiState.update { it.copy(userProfile = profile) }
+                        if (profile != null) {
+                            _uiState.update { it.copy(isLoading = false) }
+                        } else {
+                            delay(500)
+                            if (_uiState.value.userProfile == null && !_uiState.value.isGuest) {
+                                _uiState.update { it.copy(isLoading = false) }
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -80,6 +80,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.anibey_codex_tfg.R
 import com.example.anibey_codex_tfg.domain.model.UserProfile
 import com.example.anibey_codex_tfg.ui.common.component.AnimaToast
+import com.example.anibey_codex_tfg.ui.common.component.LoadingScreen
 import com.example.anibey_codex_tfg.ui.common.theme.PrimaryRed
 import com.example.anibey_codex_tfg.ui.common.theme.SoftGray
 import kotlinx.coroutines.delay
@@ -124,7 +125,11 @@ fun HomeScreen(
         )
     }
 
-    HomeContent(uiState = uiState, actions = actions)
+    if (uiState.isLoading) {
+        LoadingScreen(message = "Sincronizando el Nexo...")
+    } else {
+        HomeContent(uiState = uiState, actions = actions)
+    }
 }
 
 

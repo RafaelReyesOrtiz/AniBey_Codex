@@ -25,16 +25,15 @@ class MainViewModel @Inject constructor(
 
     private fun checkSession() {
         viewModelScope.launch {
-            // Limpiamos el modo invitado al arrancar
-            sessionDataStore.clearGuestMode()
-            
-            // Obtenemos el primer valor para decidir la pantalla de inicio y paramos
             val userProfile = sessionDataStore.userData.first()
-            
-            _startDestination.value = if (userProfile != null) {
-                Screen.Home
+            val isGuest = sessionDataStore.isGuest.first()
+
+            if (userProfile != null) {
+                _startDestination.value = Screen.Home
+            } else if (isGuest) {
+                _startDestination.value = Screen.Home
             } else {
-                Screen.Welcome
+                _startDestination.value = Screen.Welcome
             }
         }
     }
