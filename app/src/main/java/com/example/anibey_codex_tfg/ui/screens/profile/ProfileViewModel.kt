@@ -167,25 +167,32 @@ class ProfileViewModel @Inject constructor(
 
     fun saveProfile(onAutoLogout: () -> Unit) {
         if (!isUsernameValid()) return
-        state = state.copy(isLoading = true, generalError = null)
+
+        val authEmail = auth.currentUser?.email ?: ""
+        val targetEmail = state.email.trim()
+        val emailChanged = !targetEmail.equals(authEmail, ignoreCase = true)
+        val passwordChanged = state.password.isNotBlank()
+
+        if ((emailChanged || passwordChanged) && state.currentPassword.isBlank()) {
+            state = state.copy(
+                currentPasswordError = "Contraseña actual requerida"
+            )
+            return
+        }
+        state = state.copy(isLoading = true, generalError = null, updateSuccess = false)
 
         viewModelScope.launch {
             try {
-                val user = auth.currentUser ?: throw Exception()
-                user.reload().await()
-
-                val authEmail = user.email ?: ""
-                val targetEmail = state.email.trim()
-                val emailChanged = !targetEmail.equals(authEmail, ignoreCase = true)
-                val passwordChanged = state.password.isNotBlank()
-
+                val user = auth.currentUser ?: throw Exception("Usuario no autenticado")
                 Log.d(
                     "ProfileVM",
-                    "Guardando: emailCambiado=$emailChanged, passCambiado=$passwordChanged"
+                    "Iniciando guardado. Email actual: $authEmail, Objetivo: $targetEmail"
                 )
 
+                user.reload().await()
+
                 if (emailChanged || passwordChanged) {
-                    reauthenticateUser(user, authEmail) ?: return@launch
+                    if(!reauthenticateUser(user, authEmail)) return@launch
                 }
 
                 if (emailChanged) {
@@ -194,27 +201,32 @@ class ProfileViewModel @Inject constructor(
                 }
 
                 if (passwordChanged) {
-                    processPasswordChange(user) ?: return@launch
+                    if (!processPasswordChange(user)) return@launch
                 }
 
                 persistAllChanges(user.uid, authEmail)
                 finalizeSaveProcess()
 
             } catch (e: Exception) {
+                Log.e("ProfileVM", "Error general en saveProfile", e)
                 handleSaveError(e)
             }
         }
     }
 
-    private suspend fun reauthenticateUser(user: FirebaseUser, authEmail: String): Unit? {
-        if (state.currentPassword.isBlank()) {
-            state = state.copy(isLoading = false, currentPasswordError = "Contraseña requerida")
-            return null
+    private suspend fun reauthenticateUser(user: FirebaseUser, authEmail: String): Boolean {
+        return try {
+            Log.d("ProfileVM", "Reautenticando usuario...")
+            val credential = EmailAuthProvider.getCredential(authEmail, state.currentPassword)
+            user.reauthenticate(credential).await()
+            Log.d("ProfileVM", "Reautenticación exitosa")
+            true
+        } catch (e: Exception) {
+            Log.e("ProfileVM", "Error en reautenticación", e)
+            state = state.copy(isLoading = false)
+            handleSaveError(e)
+            false
         }
-        Log.d("ProfileVM", "Reautenticando usuario...")
-        val credential = EmailAuthProvider.getCredential(authEmail, state.currentPassword)
-        user.reauthenticate(credential).await()
-        return Unit
     }
 
     private suspend fun processEmailChange(
@@ -222,23 +234,47 @@ class ProfileViewModel @Inject constructor(
         targetEmail: String,
         onAutoLogout: () -> Unit
     ) {
-        if (!Patterns.EMAIL_ADDRESS.matcher(targetEmail).matches()) {
-            state = state.copy(isLoading = false, emailError = "Email inválido")
-            return
+        try {
+            if (!Patterns.EMAIL_ADDRESS.matcher(targetEmail).matches()) {
+                state = state.copy(
+                    isLoading = false,
+                    emailError = "Email inválido"
+                )
+                return
+            }
+
+            Log.d("ProfileVM", "Enviando verificación a $targetEmail")
+
+            user.verifyBeforeUpdateEmail(targetEmail).await()
+
+            state = state.copy(
+                isLoading = false,
+                isCheckingEmailVerification = true
+            )
+
+            startEmailVerificationPolling(user.uid, targetEmail, onAutoLogout)
+        } catch (e: Exception) {
+            Log.e("ProfileVM", "Error en cambio de email", e)
+            state = state.copy(isLoading = false)
+            handleSaveError(e)
         }
-        Log.d("ProfileVM", "Enviando verificación a $targetEmail")
-        user.verifyBeforeUpdateEmail(targetEmail).await()
-        state = state.copy(isLoading = false, isCheckingEmailVerification = true)
-        startEmailVerificationPolling(user.uid, targetEmail, onAutoLogout)
     }
 
-    private suspend fun processPasswordChange(user: FirebaseUser): Unit? {
-        if (state.password.length < 6) {
-            state = state.copy(isLoading = false, passwordError = "Mínimo 6 caracteres")
-            return null
+    private suspend fun processPasswordChange(user: FirebaseUser) : Boolean {
+        return try {
+            if (state.password.length < 6) {
+                state = state.copy(isLoading = false, passwordError = "Mínimo 6 caracteres")
+                false
+            } else{
+                user.updatePassword(state.password).await()
+                true
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileVM", "Error en cambio de contraseña", e)
+            state = state.copy(isLoading = false)
+            handleSaveError(e)
+            false
         }
-        user.updatePassword(state.password).await()
-        return Unit
     }
 
     private fun handleSaveError(e: Exception) {
