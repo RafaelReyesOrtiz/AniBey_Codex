@@ -130,8 +130,7 @@ class SpellViewModel @Inject constructor(
 
         if (query.isNotEmpty()) {
             filtrados = filtrados.filter {
-                it.nombre.lowercase().contains(query) ||
-                        it.descripcion.lowercase().contains(query)
+                it.nombre.lowercase().startsWith(query)
             }
         }
 

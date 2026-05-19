@@ -1,5 +1,6 @@
 package com.example.anibey_codex_tfg.ui.screens.register
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,12 +19,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LockClock
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -82,44 +85,60 @@ fun RegisterContent(
     actions: RegisterActions,
     modifier: Modifier
 ) {
-    Box(
+    Scaffold(
         modifier = modifier
             .fillMaxSize()
             .paint(
                 painter = painterResource(id = R.drawable.fondo_login),
                 contentScale = ContentScale.Crop,
                 colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.20f), BlendMode.Darken)
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Cabecera que cambia según el paso
-            RegisterHeader(step = state.currentStep)
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            ),
+        containerColor = Color.Transparent,
+        bottomBar = {
+            BottomAppBar(
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp
             ) {
-                when (state.currentStep) {
-                    RegisterStep.EMAIL_ENTRY -> EmailEntryStep(state, actions)
-                    RegisterStep.VERIFY_PENDING -> VerifyWaitStep(state, actions)
-                    RegisterStep.FINALIZE_PACT -> FinalizePactStep(state, actions)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    RegisterBottomBar(state = state, actions = actions)
                 }
             }
-
-            // Botonera Inferior
-            RegisterBottomBar(state = state, actions = actions)
         }
-        AnimaToast(
-            show = state.showToast,
-            message = state.toastMessage ?: "",
-            onDismiss = actions.onDismissToast
-        )
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                RegisterHeader(step = state.currentStep)
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Box(
+                    modifier = Modifier.fillMaxWidth().animateContentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when (state.currentStep) {
+                        RegisterStep.EMAIL_ENTRY -> EmailEntryStep(state, actions)
+                        RegisterStep.VERIFY_PENDING -> VerifyWaitStep(state, actions)
+                        RegisterStep.FINALIZE_PACT -> FinalizePactStep(state, actions)
+                    }
+                }
+                Spacer(modifier = Modifier.weight(1.5f))
+            }
+            AnimaToast(
+                show = state.showToast,
+                message = state.toastMessage ?: "",
+                onDismiss = actions.onDismissToast
+            )
+        }
     }
 }
 
@@ -323,12 +342,13 @@ private fun RegisterBottomBar(state: RegisterState, actions: RegisterActions) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 60.dp),
+            .navigationBarsPadding()
+            .padding(horizontal = 32.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         TextButton(onClick = actions.onBack, enabled = !state.isLoading) {
-            Text("VOLVER", color = Color.Black.copy(alpha = 0.5f))
+            Text("VOLVER", color = Color.White.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
         }
 
         Button(
@@ -344,7 +364,10 @@ private fun RegisterBottomBar(state: RegisterState, actions: RegisterActions) {
                 .width(170.dp),
             enabled = !state.isLoading,
             shape = RoundedCornerShape(2.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = PrimaryRed,
+                disabledContainerColor = PrimaryRed.copy(alpha = 0.5f)
+            )
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)

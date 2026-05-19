@@ -37,7 +37,6 @@ data class WelcomeActions(
     val onRegisterClick: () -> Unit = {}
 )
 
-// Composable principal con Hoisting
 @Composable
 fun WelcomeScreen(
     modifier: Modifier = Modifier,
@@ -56,130 +55,30 @@ fun WelcomeScreen(
     WelcomeScreenContent(modifier = modifier, actions = actions)
 }
 
-// Composable de contenido (Pura UI)
 @Composable
 fun WelcomeScreenContent(
     modifier: Modifier = Modifier,
     actions: WelcomeActions
 ) {
-    Box(
+    Scaffold(
         modifier = modifier
             .fillMaxSize()
             .paint(
                 painter = painterResource(id = R.drawable.fondo_login),
                 contentScale = ContentScale.Crop,
                 colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.1f), BlendMode.Darken)
-            )
-    ) {
-        // --- CAPA 1: EL LOGO ---
-        Image(
-            painter = painterResource(id = R.drawable.logo_anima_tfg),
-            contentDescription = "Anima Codex Logo",
-            modifier = Modifier
-                .align(Alignment.TopCenter) // Se mantiene centrado inicialmente
-                .padding(top = 100.dp)
-                .fillMaxWidth()
-                .scale(1.7f)
-                // Aplicamos un desplazamiento negativo en X para mover a la izquierda.
-                // Prueba valores como -40.dp, -60.dp, etc. hasta que te guste.
-                .offset(x = (-15).dp),
-            contentScale = ContentScale.FillWidth
-        )
-
-        // --- CAPA 2: CONTENIDO INTERACTIVO ---
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom // Alineamos al fondo
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(bottom = 50.dp) // Espacio de seguridad inferior
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ),
+        containerColor = Color.Transparent,
+        bottomBar = {
+            BottomAppBar(
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp
             ) {
-                // Usamos una Box para meter el "Efecto Quemado" detrás del texto
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // CAPA DE FONDO: Una mancha oscura muy suave para que el rojo resalte
-                    Spacer(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                    colors = listOf(
-                                        Color.Black.copy(alpha = 0.25f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                    )
-
-                    Text(
-                        text = "EL CÓDICE DE GAIA",
-                        style = MaterialTheme.typography.displayLarge.copy( // Usamos displayLarge que es más imponente
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 8.sp,
-                            shadow = Shadow(
-                                color = Color.White.copy(alpha = 0.8f), // ¡Sombra BLANCA para separar del fondo!
-                                offset = Offset(0f, 0f),
-                                blurRadius = 15f
-                            )
-                        ),
-                        color = PrimaryRed,
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // BOTÓN INICIAR SESIÓN
-                Button(
-                    onClick = { actions.onLoginClick() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(2.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 10.dp)
-                ) {
-                    Text(
-                        "INICIAR SESIÓN",
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-                    )
-                }
-
-                // BOTÓN INVITADO
-                OutlinedButton(
-                    onClick = { actions.onGuestClick() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(2.dp),
-                    border = BorderStroke(1.5.dp, PrimaryRed),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.4f)
-                    )
-                ) {
-                    Text(
-                        "MODO INVITADO",
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                        color = PrimaryRed
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // REGISTRO
-                Row {
                     Text(
                         text = "¿Eres nuevo en Gaia? ",
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
@@ -194,6 +93,113 @@ fun WelcomeScreenContent(
                             .clip(RoundedCornerShape(4.dp))
                             .clickable { actions.onRegisterClick() }
                     )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.logo_anima_tfg),
+                contentDescription = "Anima Codex Logo",
+                modifier = Modifier
+                    .align(Alignment.TopCenter) // Se mantiene centrado inicialmente
+                    .padding(top = 100.dp)
+                    .fillMaxWidth()
+                    .scale(1.7f)
+                    // Aplicamos un desplazamiento negativo en X para mover a la izquierda.
+                    // Prueba valores como -40.dp, -60.dp, etc. hasta que te guste.
+                    .offset(x = (-15).dp),
+                contentScale = ContentScale.FillWidth
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom // Alineamos al fondo
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(bottom = 50.dp) // Espacio de seguridad inferior
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(
+                                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                        colors = listOf(
+                                            Color.Black.copy(alpha = 0.25f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+
+                        Text(
+                            text = "EL CÓDICE DE GAIA",
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 8.sp,
+                                shadow = Shadow(
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = 15f
+                                )
+                            ),
+                            color = PrimaryRed,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { actions.onLoginClick() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        shape = RoundedCornerShape(2.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 10.dp)
+                    ) {
+                        Text(
+                            "INICIAR SESIÓN",
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { actions.onGuestClick() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        shape = RoundedCornerShape(2.dp),
+                        border = BorderStroke(1.5.dp, PrimaryRed),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.4f)
+                        )
+                    ) {
+                        Text(
+                            "MODO INVITADO",
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                            color = PrimaryRed
+                        )
+                    }
                 }
             }
         }

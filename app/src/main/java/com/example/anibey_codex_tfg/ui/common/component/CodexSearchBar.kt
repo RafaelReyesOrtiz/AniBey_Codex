@@ -1,5 +1,6 @@
 package com.example.anibey_codex_tfg.ui.common.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -38,6 +39,7 @@ fun CodexSearchBar(
         },
         modifier = modifier
             .fillMaxWidth()
+            .background(Color.Transparent)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         colors = TextFieldDefaults.colors(
             unfocusedContainerColor = Color.White.copy(alpha = 0.2f),

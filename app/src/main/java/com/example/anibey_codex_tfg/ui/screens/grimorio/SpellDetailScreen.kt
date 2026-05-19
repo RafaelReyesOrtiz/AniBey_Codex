@@ -75,21 +75,29 @@ fun SpellDetailContent(
     onToggleGrimorio: () -> Unit
 ) {
     val ramaColor = hechizo?.ramaMagia?.let { getRamaColor(it) } ?: Color.Gray
-    val backgroundColor = Color(0xFF121212) // Gris neutral profundo
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Color(0xFF121212)
+            ),
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        hechizo?.nombre?.uppercase() ?: "CARGANDO...", 
+                        hechizo?.nombre?.uppercase() ?: "CARGANDO...",
                         letterSpacing = 2.sp,
                         fontWeight = FontWeight.Black
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
                     }
                 },
                 actions = {
@@ -107,9 +115,11 @@ fun SpellDetailContent(
                 )
             )
         },
-        containerColor = backgroundColor
+        containerColor = Color.Transparent
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
             if (hechizo == null) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
@@ -159,7 +169,12 @@ fun SpellDetailContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        AttributeBox("ZEON", hechizo.zeonCost.toString(), ramaColor, Modifier.weight(1f))
+                        AttributeBox(
+                            "ZEON",
+                            hechizo.zeonCost.toString(),
+                            ramaColor,
+                            Modifier.weight(1f)
+                        )
                         AttributeBox("TIEMPO", hechizo.tiempoCasteo, ramaColor, Modifier.weight(1f))
                         AttributeBox("RANGO", hechizo.rango, ramaColor, Modifier.weight(1f))
                     }
@@ -210,7 +225,7 @@ fun SpellDetailContent(
                             letterSpacing = 1.sp
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
@@ -246,17 +261,17 @@ fun AttributeBox(label: String, value: String, color: Color, modifier: Modifier 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = label, 
-            color = color.copy(alpha = 0.7f), 
-            fontSize = 10.sp, 
+            text = label,
+            color = color.copy(alpha = 0.7f),
+            fontSize = 10.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = 1.sp
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = value, 
-            color = Color.White, 
-            fontSize = 14.sp, 
+            text = value,
+            color = Color.White,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
@@ -277,7 +292,7 @@ fun SpellDetailScreenPreview() {
         descripcion = "Una esfera de fuego abrasador que estalla al contacto con el enemigo.",
         efecto = "Causa 40 puntos de daño de fuego en un área de 5 metros."
     )
-    
+
     SpellDetailContent(
         hechizo = dummyHechizo,
         isInGrimorio = true,

@@ -110,7 +110,7 @@ fun HomeScreen(
     onLogout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     val actions = remember(viewModel) {
         HomeActions(
             onNavigateToProfile = onNavigateToProfile,
@@ -142,7 +142,6 @@ fun HomeContent(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Box raíz para asegurar que el Toast siempre esté en la capa superior
     Box(modifier = Modifier.fillMaxSize()) {
         ModalNavigationDrawer(
             drawerState = drawerState,
@@ -156,8 +155,25 @@ fun HomeContent(
         ) {
             Scaffold(
                 topBar = {
-                    HomeTopBar(onMenuClick = { scope.launch { drawerState.open() } })
-                }
+                    HomeTopBar(
+                        onMenuClick = {
+                            scope.launch {
+                                drawerState.open()
+                            }
+                        }
+                    )
+                },
+                containerColor = Color.Transparent,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .paint(
+                        painter = painterResource(id = R.drawable.fondo_login),
+                        contentScale = ContentScale.Crop,
+                        colorFilter = ColorFilter.tint(
+                            Color.Black.copy(alpha = 0.5f),
+                            BlendMode.Darken
+                        )
+                    )
             ) { padding ->
                 MainBackgroundWrapper(padding) {
                     if (uiState.isGuest || uiState.userProfile == null) {
@@ -325,12 +341,7 @@ fun MainBackgroundWrapper(padding: PaddingValues, content: @Composable () -> Uni
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(padding)
-            .paint(
-                painter = painterResource(id = R.drawable.fondo_login),
-                contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.5f), BlendMode.Darken)
-            ),
+            .padding(padding),
         contentAlignment = Alignment.Center
     ) {
         content()
@@ -456,7 +467,9 @@ private fun ProfileImageHeader(
             try {
                 val decodedString = Base64.decode(photoUrl, Base64.DEFAULT)
                 BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                null
+            }
         } else photoUrl
     }
 

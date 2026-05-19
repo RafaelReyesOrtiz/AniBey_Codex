@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,6 +54,11 @@ import com.example.anibey_codex_tfg.ui.common.component.LoadingScreen
 import com.example.anibey_codex_tfg.ui.common.theme.GoldAccent
 import com.example.anibey_codex_tfg.ui.common.theme.OldPaper
 import com.example.anibey_codex_tfg.ui.common.theme.PrimaryRed
+
+data class LugarDetailActions(
+    val onBackClick: () -> Unit = {},
+    val onRetry: () -> Unit = {}
+)
 
 @Composable
 fun LugarDetailScreen(
@@ -65,22 +72,42 @@ fun LugarDetailScreen(
         viewModel.cargarLugar(lugarId)
     }
 
+    val actions = LugarDetailActions(
+        onBackClick = onBackClick,
+        onRetry = { viewModel.cargarLugar(lugarId) }
+    )
+
+    LugarDetailScreenContent(
+        uiState = uiState,
+        actions = actions
+    )
+}
+
+@Composable
+fun LugarDetailScreenContent(
+    uiState: LugarDetailState,
+    actions: LugarDetailActions
+) {
     Scaffold(
-        topBar = { LugarDetailTopBar(onBackClick) }
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        topBar = { LugarDetailTopBar(actions.onBackClick) },
+        containerColor = Color.Transparent
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.Black)
         ) {
-            when (val state = uiState) {
+            when (uiState) {
                 is LugarDetailState.Loading -> LoadingScreen()
                 is LugarDetailState.Error -> ErrorScreen(
-                    error = state.message,
-                    onRetry = { viewModel.cargarLugar(lugarId) }
+                    error = uiState.message,
+                    onRetry = actions.onRetry
                 )
-                is LugarDetailState.Success -> LugarDetailContent(lugar = state.lugar)
+
+                is LugarDetailState.Success -> LugarDetailSuccessContent(lugar = uiState.lugar)
             }
         }
     }
@@ -93,9 +120,11 @@ private fun LugarDetailTopBar(onBackClick: () -> Unit) {
         title = {
             Text(
                 "DETALLES DEL LUGAR",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 3.sp,
+                    color = Color.White
+                )
             )
         },
         navigationIcon = {
@@ -112,7 +141,7 @@ private fun LugarDetailTopBar(onBackClick: () -> Unit) {
 }
 
 @Composable
-private fun LugarDetailContent(lugar: Lugar) {
+private fun LugarDetailSuccessContent(lugar: Lugar) {
     val scrollState = rememberScrollState()
 
     Column(
@@ -121,13 +150,13 @@ private fun LugarDetailContent(lugar: Lugar) {
             .verticalScroll(scrollState)
     ) {
         LugarHeaderSection(lugar)
-        
+
         LugarDescriptionCard(lugar)
 
         if (lugar.personajes.isNotEmpty()) {
             LugarDetailSection(title = "PERSONAJES RELACIONADOS", items = lugar.personajes)
         }
-        
+
         if (lugar.monstruos.isNotEmpty()) {
             LugarDetailSection(title = "BESTIARIO LOCAL", items = lugar.monstruos)
         }
@@ -157,8 +186,7 @@ private fun LugarHeaderSection(lugar: Lugar) {
                 }
             )
         }
-        
-        // Gradiente para legibilidad
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -169,7 +197,7 @@ private fun LugarHeaderSection(lugar: Lugar) {
                     )
                 )
         )
-        
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -184,10 +212,19 @@ private fun LugarHeaderSection(lugar: Lugar) {
                 )
             )
             if (lugar.region.isNotEmpty()) {
-                Text(
-                    text = "📍 ${lugar.region}",
-                    style = MaterialTheme.typography.titleMedium.copy(color = GoldAccent)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = GoldAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = lugar.region,
+                        style = MaterialTheme.typography.titleMedium.copy(color = GoldAccent)
+                    )
+                }
             }
         }
     }
@@ -214,7 +251,7 @@ private fun LugarDescriptionCard(lugar: Lugar) {
                 modifier = Modifier.padding(vertical = 8.dp),
                 color = PrimaryRed.copy(alpha = 0.3f)
             )
-            
+
             Text(
                 text = lugar.descripcion,
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -277,5 +314,27 @@ private fun LugarDetailSection(title: String, items: List<String>) {
                 Text(text = item, color = Color.White.copy(alpha = 0.9f))
             }
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+fun LugarDetailPreview() {
+    val mockLugar = Lugar(
+        id = "1",
+        nombre = "Puerto de Tol Rauko",
+        region = "Tierras Sombrías",
+        descripcion = "Un enclave místico donde las aguas del mar del olvido rompen contra los acantilados de la eternidad. Se dice que los barcos fantasmas atracan aquí cada eclipse.",
+        imagenURL = "",
+        personajes = listOf("El Guardián de las Nieblas", "Eriel de Gaibor"),
+        monstruos = listOf("Kraken Menor", "Sirenas Abisales"),
+        tipo = "Puerto Místico"
+    )
+
+    MaterialTheme {
+        LugarDetailScreenContent(
+            uiState = LugarDetailState.Success(mockLugar),
+            actions = LugarDetailActions()
+        )
     }
 }

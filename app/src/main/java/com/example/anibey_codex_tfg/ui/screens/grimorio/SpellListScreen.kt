@@ -27,8 +27,15 @@ import com.example.anibey_codex_tfg.domain.model.Hechizo
 import com.example.anibey_codex_tfg.ui.common.FileUtils.getRamaColor
 import com.example.anibey_codex_tfg.ui.common.theme.PrimaryRed
 
-// Función helper para definir la identidad visual de cada rama
-
+// Agrupamos las acciones para State Hoisting
+data class SpellActions(
+    val onBackClick: () -> Unit = {},
+    val onNavigateToDetail: (String) -> Unit = {},
+    val onRamaSelected: (String) -> Unit = {},
+    val onToggleGrimorio: (String) -> Unit = {},
+    val onToggleView: (Boolean) -> Unit = {},
+    val onSearchQueryChange: (String) -> Unit = {}
+)
 
 @Composable
 fun SpellListScreen(
@@ -42,18 +49,22 @@ fun SpellListScreen(
     val onlyGrimorio by viewModel.showOnlyGrimorio.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
-    SpellListContent(
-        uiState = uiState,
-        selectedRama = selectedRama,
-        grimorioIds = grimorioIds,
-        onlyGrimorio = onlyGrimorio,
-        searchQuery = searchQuery,
+    val actions = SpellActions(
         onBackClick = onBackClick,
         onNavigateToDetail = onNavigateToDetail,
         onRamaSelected = viewModel::selectRama,
         onToggleGrimorio = viewModel::toggleGrimorio,
         onToggleView = viewModel::setShowOnlyGrimorio,
         onSearchQueryChange = viewModel::setSearchQuery
+    )
+
+    SpellListContent(
+        uiState = uiState,
+        selectedRama = selectedRama,
+        grimorioIds = grimorioIds,
+        onlyGrimorio = onlyGrimorio,
+        searchQuery = searchQuery,
+        actions = actions
     )
 }
 
@@ -65,17 +76,13 @@ fun SpellListContent(
     grimorioIds: Set<String>,
     onlyGrimorio: Boolean,
     searchQuery: String,
-    onBackClick: () -> Unit,
-    onNavigateToDetail: (String) -> Unit,
-    onRamaSelected: (String) -> Unit,
-    onToggleGrimorio: (String) -> Unit,
-    onToggleView: (Boolean) -> Unit,
-    onSearchQueryChange: (String) -> Unit
+    actions: SpellActions
 ) {
-    // Fondo gris neutral profundo para reducir el contraste agresivo del negro puro
-    val backgroundColor = Color(0xFF121212)
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF121212)),
         topBar = {
             TopAppBar(
                 title = {
@@ -87,21 +94,20 @@ fun SpellListContent(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = actions.onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
             )
-        }
+        },
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .background(backgroundColor)
         ) {
-            // Selector de Sección (Biblioteca vs Mi Grimorio)
             TabRow(
                 selectedTabIndex = if (onlyGrimorio) 1 else 0,
                 containerColor = Color.Black,
@@ -115,22 +121,34 @@ fun SpellListContent(
             ) {
                 Tab(
                     selected = !onlyGrimorio,
-                    onClick = { onToggleView(false) },
+                    onClick = { actions.onToggleView(false) },
                     text = { Text("BIBLIOTECA", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
-                    icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, null, modifier = Modifier.size(20.dp)) }
+                    icon = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.MenuBook,
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 )
                 Tab(
                     selected = onlyGrimorio,
-                    onClick = { onToggleView(true) },
+                    onClick = { actions.onToggleView(true) },
                     text = { Text("MI GRIMORIO", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
-                    icon = { Icon(Icons.Default.AutoStories, null, modifier = Modifier.size(20.dp)) }
+                    icon = {
+                        Icon(
+                            Icons.Default.AutoStories,
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 )
             }
 
-            // Barra de Búsqueda con diseño más sutil
+            // Barra de Búsqueda
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = onSearchQueryChange,
+                onValueChange = actions.onSearchQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -138,7 +156,7 @@ fun SpellListContent(
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
+                        IconButton(onClick = { actions.onSearchQueryChange("") }) {
                             Icon(Icons.Default.Close, null, tint = Color.Gray)
                         }
                     }
@@ -155,15 +173,19 @@ fun SpellListContent(
                 )
             )
 
-            RunicFilterBar(selectedRama = selectedRama, onRamaSelected = onRamaSelected)
+            RunicFilterBar(selectedRama = selectedRama, onRamaSelected = actions.onRamaSelected)
 
             Box(modifier = Modifier.weight(1f)) {
                 when (uiState) {
                     is SpellStates.Loading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             CircularProgressIndicator(color = PrimaryRed)
                         }
                     }
+
                     is SpellStates.Success -> {
                         LazyColumn(
                             contentPadding = PaddingValues(16.dp),
@@ -173,25 +195,33 @@ fun SpellListContent(
                                 SpellCard(
                                     hechizo = hechizo,
                                     isInGrimorio = grimorioIds.contains(hechizo.id),
-                                    onClick = { onNavigateToDetail(hechizo.id) },
-                                    onToggleGrimorio = { onToggleGrimorio(hechizo.id) }
+                                    onClick = { actions.onNavigateToDetail(hechizo.id) },
+                                    onToggleGrimorio = { actions.onToggleGrimorio(hechizo.id) }
                                 )
                             }
                         }
                     }
+
                     is SpellStates.Empty -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = if (onlyGrimorio) "Tu grimorio está vacío.\nAñade hechizos desde la biblioteca." 
-                                       else "No se encontraron hechizos arcana.",
+                                text = if (onlyGrimorio) "Tu grimorio está vacío.\nAñade hechizos desde la biblioteca."
+                                else "No se encontraron hechizos arcana.",
                                 color = Color.Gray,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(32.dp)
                             )
                         }
                     }
+
                     is SpellStates.Error -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text("Error: ${uiState.message}", color = PrimaryRed)
                         }
                     }
@@ -259,7 +289,7 @@ fun SpellCard(
         shape = AbsoluteCutCornerShape(topRight = 20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
         border = BorderStroke(
-            1.dp, 
+            1.dp,
             if (isInGrimorio) ramaColor else ramaColor.copy(alpha = 0.2f)
         )
     ) {
@@ -277,14 +307,16 @@ fun SpellCard(
                 )
             }
 
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Column(modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp)) {
                 Text(
                     text = hechizo.nombre.uppercase(),
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
-                
+
                 Surface(
                     color = ramaColor.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(4.dp)
@@ -325,17 +357,12 @@ fun SpellCard(
 @Preview(showBackground = true)
 @Composable
 fun SpellListScreenPreview() {
-    SpellListContent (
+    SpellListContent(
         uiState = SpellStates.Success(emptyList()),
         selectedRama = "Todas",
         grimorioIds = emptySet(),
         onlyGrimorio = false,
         searchQuery = "",
-        onBackClick = {},
-        onNavigateToDetail = {},
-        onRamaSelected = {},
-        onToggleGrimorio = {},
-        onToggleView = {},
-        onSearchQueryChange = {}
+        actions = SpellActions()
     )
 }

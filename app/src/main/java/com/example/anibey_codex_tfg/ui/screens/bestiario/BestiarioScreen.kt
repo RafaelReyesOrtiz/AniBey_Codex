@@ -84,6 +84,7 @@ fun BestiarioContent(
     LaunchedEffect(searchQuery) { selectedIndex = 0 }
 
     Scaffold(
+        containerColor = Color(0xFF050505),
         topBar = {
             TopAppBar(
                 title = { Text("CODEX BESTIARIO", color = Color.White, fontWeight = FontWeight.Black) },
@@ -100,7 +101,6 @@ fun BestiarioContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFF050505))
         ) {
             CodexSearchBar(
                 searchQuery = searchQuery,
@@ -333,8 +333,16 @@ fun SearchMonstruoCard(monstruo: Monstruo, onClick: () -> Unit) {
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
-fun BestiarioScreenPreview() {
-    BestiarioScreen(onBackClick = {}, onMonstruoClick = {})
+fun BestiarioPreview() {
+    BestiarioContent (
+        uiState = BestiarioStates.Success(emptyList()),
+        searchQuery = "",
+        onSearchQueryChange = {},
+        onRetry = {},
+        onBackClick = {},
+        onMonstruoClick = {}
+    )
 }

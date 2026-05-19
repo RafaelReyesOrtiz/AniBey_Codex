@@ -7,30 +7,31 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -112,6 +113,7 @@ fun ProfileScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileContent(
     state: ProfileState,
@@ -128,79 +130,120 @@ fun ProfileContent(
     }
 
     DiscardChangesDialog(state, actions)
-    
+
     if (state.isCheckingEmailVerification) {
         VerificationWaitingDialog()
     }
 
-    Box(
+    Scaffold(
         modifier = modifier
             .fillMaxSize()
             .paint(
                 painter = painterResource(id = R.drawable.fondo_login),
                 contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.tint(Color.Black.copy(alpha = 0.20f), BlendMode.Darken)
+                colorFilter = ColorFilter.tint(
+                    Color.Black.copy(alpha = 0.20f),
+                    BlendMode.Darken
+                )
+            ),
+        // AQUÍ: Hacemos que el Scaffold sea transparente para que se vea el paint de arriba
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Mi Perfil",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            shadow = Shadow(color = Color.Black, blurRadius = 4f)
+                        ),
+                        color = Color.White
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = Color.White
+                ),
+                navigationIcon = {
+                    IconButton(onClick = actions.onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
+                }
             )
-    ) {
-        Column(
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp
+            ) {
+                SaveButton(state, actions)
+            }
+        }
+    ) { innerPadding ->
+        Box(
             modifier = Modifier
+                .padding(innerPadding)
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ProfileHeader(actions)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            ProfilePhotoSelector(
-                photoUrl = state.photoUrl,
-                onSelectClick = { imageLauncher.launch("image/*") },
-                onDeleteClick = actions.onDeletePhoto,
-                isLoading = state.isLoading
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(scrollState),
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ProfileFormFields(state, actions)
+                ProfilePhotoSelector(
+                    photoUrl = state.photoUrl,
+                    onSelectClick = { imageLauncher.launch("image/*") },
+                    onDeleteClick = actions.onDeletePhoto,
+                    isLoading = state.isLoading
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(scrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ProfileFormFields(state, actions)
+                }
             }
 
-            SaveButton(state, actions)
+            // Toast de Error
+            AnimaToast(
+                show = state.generalError != null,
+                message = state.generalError ?: "",
+                onDismiss = actions.onDismissError,
+                isSuccess = false
+            )
+
+            // Toast de Éxito
+            AnimaToast(
+                show = state.updateSuccess,
+                message = "¡Esencia actualizada con éxito!",
+                onDismiss = actions.onDismissSuccess,
+                isSuccess = true
+            )
         }
-
-        // Toast de Error
-        AnimaToast(
-            show = state.generalError != null,
-            message = state.generalError ?: "",
-            onDismiss = actions.onDismissError,
-            isSuccess = false
-        )
-
-        // Toast de Éxito
-        AnimaToast(
-            show = state.updateSuccess,
-            message = "¡Esencia actualizada con éxito!",
-            onDismiss = actions.onDismissSuccess,
-            isSuccess = true
-        )
     }
 }
 
+
 @Composable
-private fun VerificationWaitingDialog() {
+fun VerificationWaitingDialog() {
     AlertDialog(
         onDismissRequest = { },
         title = { Text("VERIFICACIÓN EN CURSO", color = PrimaryRed) },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
                     "Pulsa el enlace de tu correo.\nEsta pantalla se cerrará sola al confirmar.",
                     color = Color.White,
@@ -216,7 +259,7 @@ private fun VerificationWaitingDialog() {
 }
 
 @Composable
-private fun DiscardChangesDialog(state: ProfileState, actions: ProfileActions) {
+fun DiscardChangesDialog(state: ProfileState, actions: ProfileActions) {
     if (state.isDiscardDialogOpen) {
         AlertDialog(
             onDismissRequest = actions.onDismissDiscardDialog,
@@ -240,32 +283,7 @@ private fun DiscardChangesDialog(state: ProfileState, actions: ProfileActions) {
 }
 
 @Composable
-private fun ProfileHeader(actions: ProfileActions) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = actions.onBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Volver",
-                tint = Color.White
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = "Mi Perfil",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                shadow = Shadow(color = Color.Black, blurRadius = 4f)
-            ),
-            color = Color.White
-        )
-    }
-}
-
-@Composable
-private fun ProfileFormFields(state: ProfileState, actions: ProfileActions) {
+fun ProfileFormFields(state: ProfileState, actions: ProfileActions) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AnimaTextField(
             value = state.username,
@@ -300,11 +318,7 @@ private fun ProfileFormFields(state: ProfileState, actions: ProfileActions) {
 }
 
 @Composable
-private fun SaveButton(state: ProfileState, actions: ProfileActions) {
-    // Calculamos si hay cambios aquí para habilitar o deshabilitar el botón
-    // Nota: Para una precisión absoluta, el ViewModel debería exponer este booleano.
-    // Pero por consistencia con el código actual, lo dejamos reactivo al estado de carga.
-    
+fun SaveButton(state: ProfileState, actions: ProfileActions) {
     Button(
         onClick = actions.onSave,
         modifier = Modifier

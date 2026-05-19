@@ -5,16 +5,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -65,11 +67,12 @@ fun MonstruoDetailContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         "BESTIA",
-                        color = Color.Gray
-                    ) 
+                        color = Color.White,
+                        fontWeight = FontWeight.Black
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -113,7 +116,6 @@ fun MonstruoDetailContent(
                         )
                 )
 
-                // Etiqueta de Nivel con color según peligro
                 DangerBadge(
                     monstruo = monstruo,
                     modifier = Modifier
@@ -151,7 +153,7 @@ fun MonstruoDetailContent(
             Spacer(modifier = Modifier.height(32.dp))
 
             // Cuerpo del Compendio
-            InfoSection(title = "RELATO ANCESTRAL", iconText = "📜") {
+            InfoSection(title = "RELATO ANCESTRAL", icon = Icons.AutoMirrored.Filled.MenuBook) {
                 Text(
                     text = monstruo.descripcion,
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -162,7 +164,7 @@ fun MonstruoDetailContent(
                 )
             }
 
-            InfoSection(title = "HABITAT CONOCIDO", iconText = "📍") {
+            InfoSection(title = "HABITAT CONOCIDO", icon = Icons.Default.LocationOn) {
                 Text(
                     text = monstruo.habitat,
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
@@ -197,7 +199,7 @@ fun MonstruoDetailContent(
 @Composable
 fun InfoSection(
     title: String,
-    iconText: String,
+    icon: ImageVector,
     content: @Composable () -> Unit
 ) {
     Column(
@@ -206,7 +208,12 @@ fun InfoSection(
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(iconText, fontSize = 20.sp)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = GoldAccent,
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = title,
