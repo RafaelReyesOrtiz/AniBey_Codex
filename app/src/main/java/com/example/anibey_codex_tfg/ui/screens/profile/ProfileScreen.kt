@@ -43,11 +43,11 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.anibey_codex_tfg.R
 import com.example.anibey_codex_tfg.ui.common.component.AnimaTextField
+import com.example.anibey_codex_tfg.ui.common.component.AnimaToast
 import com.example.anibey_codex_tfg.ui.common.component.ProfilePhotoSelector
 import com.example.anibey_codex_tfg.ui.common.theme.PrimaryRed
 
@@ -62,7 +62,9 @@ data class ProfileActions(
     val uploadPhoto: (Uri) -> Unit = {},
     val onDeletePhoto: () -> Unit = {},
     val onDismissDiscardDialog: () -> Unit = {},
-    val onConfirmDiscard: () -> Unit = {}
+    val onConfirmDiscard: () -> Unit = {},
+    val onDismissError: () -> Unit = {},
+    val onDismissSuccess: () -> Unit = {}
 )
 
 @Composable
@@ -98,7 +100,9 @@ fun ProfileScreen(
         onConfirmDiscard = {
             viewModel.onDismissDiscardDialog()
             onNavigateBack()
-        }
+        },
+        onDismissError = viewModel::onDismissError,
+        onDismissSuccess = viewModel::onDismissSuccess
     )
 
     ProfileContent(
@@ -149,7 +153,6 @@ fun ProfileContent(
             ProfileHeader(actions)
             Spacer(modifier = Modifier.height(24.dp))
 
-            ProfileMessages(state)
             Spacer(modifier = Modifier.height(32.dp))
 
             ProfilePhotoSelector(
@@ -172,6 +175,22 @@ fun ProfileContent(
 
             SaveButton(state, actions)
         }
+
+        // Toast de Error
+        AnimaToast(
+            show = state.generalError != null,
+            message = state.generalError ?: "",
+            onDismiss = actions.onDismissError,
+            isSuccess = false
+        )
+
+        // Toast de Éxito
+        AnimaToast(
+            show = state.updateSuccess,
+            message = "¡Esencia actualizada con éxito!",
+            onDismiss = actions.onDismissSuccess,
+            isSuccess = true
+        )
     }
 }
 
@@ -182,14 +201,13 @@ private fun VerificationWaitingDialog() {
         title = { Text("VERIFICACIÓN EN CURSO", color = PrimaryRed) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                CircularProgressIndicator(color = PrimaryRed)
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "Pulsa el enlace de tu correo.\nEsta pantalla se cerrará sola al confirmar.",
-                    textAlign = TextAlign.Center,
                     color = Color.White,
                     fontSize = 14.sp
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator(color = PrimaryRed)
             }
         },
         confirmButton = {},
@@ -247,27 +265,6 @@ private fun ProfileHeader(actions: ProfileActions) {
 }
 
 @Composable
-private fun ProfileMessages(state: ProfileState) {
-    state.generalError?.let { error ->
-        Text(
-            text = error,
-            color = PrimaryRed,
-            style = MaterialTheme.typography.labelSmall.copy(textAlign = TextAlign.Center),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-    }
-
-    if (state.updateSuccess) {
-        Text(
-            text = "¡Esencia actualizada!",
-            color = Color.Green,
-            style = MaterialTheme.typography.labelSmall.copy(textAlign = TextAlign.Center),
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-    }
-}
-
-@Composable
 private fun ProfileFormFields(state: ProfileState, actions: ProfileActions) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         AnimaTextField(
@@ -304,6 +301,10 @@ private fun ProfileFormFields(state: ProfileState, actions: ProfileActions) {
 
 @Composable
 private fun SaveButton(state: ProfileState, actions: ProfileActions) {
+    // Calculamos si hay cambios aquí para habilitar o deshabilitar el botón
+    // Nota: Para una precisión absoluta, el ViewModel debería exponer este booleano.
+    // Pero por consistencia con el código actual, lo dejamos reactivo al estado de carga.
+    
     Button(
         onClick = actions.onSave,
         modifier = Modifier
@@ -312,7 +313,10 @@ private fun SaveButton(state: ProfileState, actions: ProfileActions) {
             .height(50.dp),
         enabled = !state.isLoading && !state.isCheckingEmailVerification,
         shape = RoundedCornerShape(2.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = PrimaryRed)
+        colors = ButtonDefaults.buttonColors(
+            containerColor = PrimaryRed,
+            disabledContainerColor = PrimaryRed.copy(alpha = 0.5f)
+        )
     ) {
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)

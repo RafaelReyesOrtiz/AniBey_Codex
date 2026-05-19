@@ -15,5 +15,6 @@ data class ProfileState(
     val updateSuccess: Boolean = false,
     val isDiscardDialogOpen: Boolean = false,
     val isCheckingEmailVerification: Boolean = false,
-    val shouldNavigateToWelcome: Boolean = false
+    val shouldNavigateToWelcome: Boolean = false,
+    val hasUnsavedChanges: Boolean = false
 )

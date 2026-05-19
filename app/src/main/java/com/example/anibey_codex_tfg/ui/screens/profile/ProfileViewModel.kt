@@ -56,7 +56,6 @@ class ProfileViewModel @Inject constructor(
 
     private fun loadUserProfile() {
         val user = auth.currentUser
-        Log.d("ProfileVM", "Cargando perfil. Usuario actual: ${user?.uid}")
         if (user == null) {
             state = state.copy(shouldNavigateToWelcome = true, isLoading = false)
             return
@@ -67,22 +66,12 @@ class ProfileViewModel @Inject constructor(
                 state = state.copy(isLoading = true)
                 user.reload().await()
                 val currentAuthEmail = user.email ?: ""
-                Log.d("ProfileVM", "Email en Authentication: $currentAuthEmail")
 
                 val doc = db.collection("users").document(user.uid).get().await()
                 val profile = doc.toObject(UserProfile::class.java)
-                Log.d("ProfileVM", "Email en Firestore: ${profile?.email}")
 
                 if (profile != null) {
-                    if (currentAuthEmail.isNotEmpty() && !currentAuthEmail.equals(
-                            profile.email,
-                            ignoreCase = true
-                        )
-                    ) {
-                        Log.d(
-                            "ProfileVM",
-                            "Desajuste detectado. Sincronizando Firestore con el nuevo correo verificado."
-                        )
+                    if (currentAuthEmail.isNotEmpty() && !currentAuthEmail.equals(profile.email, ignoreCase = true)) {
                         syncFirestoreEmail(user.uid, currentAuthEmail)
                     }
 
@@ -94,53 +83,58 @@ class ProfileViewModel @Inject constructor(
                         username = originalUsername,
                         email = originalEmail,
                         photoUrl = originalPhotoUrl,
-                        isLoading = false
+                        isLoading = false,
+                        hasUnsavedChanges = false
                     )
                 } else {
-                    Log.e("ProfileVM", "No se encontró el perfil en Firestore")
-                    state =
-                        state.copy(isLoading = false, generalError = "Error: Datos no encontrados")
+                    state = state.copy(isLoading = false, generalError = "Datos no encontrados")
                 }
-            } catch (e: Exception) {
-                Log.e("ProfileVM", "Error cargando perfil", e)
-                state = state.copy(isLoading = false, generalError = "Error de red")
+            } catch (_: Exception) {
+                state = state.copy(isLoading = false, generalError = "Error de conexión")
             }
         }
     }
 
-    private suspend fun syncFirestoreEmail(uid: String, newEmail: String) {
-        withContext(NonCancellable) {
-            Log.d("ProfileVM", "Iniciando sincronización: $newEmail")
-            val docRef = db.collection("users").document(uid)
-            val doc = docRef.get().await()
-            val profile = doc.toObject(UserProfile::class.java)
-            profile?.let {
-                val updated = it.copy(email = newEmail)
-                docRef.set(updated).await()
-                sessionDataStore.saveSession(updated)
-                Log.d("ProfileVM", "Firestore actualizado con el nuevo correo")
-            }
-        }
+    private fun checkChanges() {
+        val emailChanged = !state.email.trim().equals(originalEmail, ignoreCase = true)
+        val passwordChanged = state.password.isNotBlank()
+        val usernameChanged = state.username != originalUsername
+        val photoChanged = state.photoUrl != originalPhotoUrl
+        
+        state = state.copy(hasUnsavedChanges = emailChanged || passwordChanged || usernameChanged || photoChanged)
     }
 
     fun onUsernameChange(newValue: String) {
         state = state.copy(username = newValue, usernameError = null)
+        checkChanges()
     }
 
     fun onEmailChange(newValue: String) {
         state = state.copy(email = newValue, emailError = null)
+        checkChanges()
     }
 
     fun onPasswordChange(newValue: String) {
         state = state.copy(password = newValue, passwordError = null)
+        checkChanges()
     }
 
     fun onCurrentPasswordChange(newValue: String) {
         state = state.copy(currentPassword = newValue, currentPasswordError = null)
+        checkChanges()
     }
 
     fun onPhotoChange(newValue: String?) {
         state = state.copy(photoUrl = newValue)
+        checkChanges()
+    }
+    
+    fun onDismissError(){
+        state = state.copy(generalError = null)
+    }
+
+    fun onDismissSuccess() {
+        state = state.copy(updateSuccess = false)
     }
 
     fun uploadPhoto(imageUri: Uri) {
@@ -149,6 +143,7 @@ class ProfileViewModel @Inject constructor(
                 state = state.copy(isLoading = true)
                 val base64Image = processImageToBase64(imageUri)
                 state = state.copy(photoUrl = base64Image, isLoading = false)
+                checkChanges()
             } catch (_: Exception) {
                 state = state.copy(isLoading = false, generalError = "Error procesando imagen")
             }
@@ -167,28 +162,23 @@ class ProfileViewModel @Inject constructor(
 
     fun saveProfile(onAutoLogout: () -> Unit) {
         if (!isUsernameValid()) return
+        if (!state.hasUnsavedChanges) return
 
-        val authEmail = auth.currentUser?.email ?: ""
+        val authEmail = auth.currentUser?.email ?: return
         val targetEmail = state.email.trim()
         val emailChanged = !targetEmail.equals(authEmail, ignoreCase = true)
         val passwordChanged = state.password.isNotBlank()
 
         if ((emailChanged || passwordChanged) && state.currentPassword.isBlank()) {
-            state = state.copy(
-                currentPasswordError = "Contraseña actual requerida"
-            )
+            state = state.copy(currentPasswordError = "Contraseña actual requerida")
             return
         }
+        
         state = state.copy(isLoading = true, generalError = null, updateSuccess = false)
 
         viewModelScope.launch {
             try {
                 val user = auth.currentUser ?: throw Exception("Usuario no autenticado")
-                Log.d(
-                    "ProfileVM",
-                    "Iniciando guardado. Email actual: $authEmail, Objetivo: $targetEmail"
-                )
-
                 user.reload().await()
 
                 if (emailChanged || passwordChanged) {
@@ -208,7 +198,6 @@ class ProfileViewModel @Inject constructor(
                 finalizeSaveProcess()
 
             } catch (e: Exception) {
-                Log.e("ProfileVM", "Error general en saveProfile", e)
                 handleSaveError(e)
             }
         }
@@ -216,46 +205,25 @@ class ProfileViewModel @Inject constructor(
 
     private suspend fun reauthenticateUser(user: FirebaseUser, authEmail: String): Boolean {
         return try {
-            Log.d("ProfileVM", "Reautenticando usuario...")
             val credential = EmailAuthProvider.getCredential(authEmail, state.currentPassword)
             user.reauthenticate(credential).await()
-            Log.d("ProfileVM", "Reautenticación exitosa")
             true
         } catch (e: Exception) {
-            Log.e("ProfileVM", "Error en reautenticación", e)
-            state = state.copy(isLoading = false)
             handleSaveError(e)
             false
         }
     }
 
-    private suspend fun processEmailChange(
-        user: FirebaseUser,
-        targetEmail: String,
-        onAutoLogout: () -> Unit
-    ) {
+    private suspend fun processEmailChange(user: FirebaseUser, targetEmail: String, onAutoLogout: () -> Unit) {
         try {
             if (!Patterns.EMAIL_ADDRESS.matcher(targetEmail).matches()) {
-                state = state.copy(
-                    isLoading = false,
-                    emailError = "Email inválido"
-                )
+                state = state.copy(isLoading = false, generalError = "Email inválido")
                 return
             }
-
-            Log.d("ProfileVM", "Enviando verificación a $targetEmail")
-
             user.verifyBeforeUpdateEmail(targetEmail).await()
-
-            state = state.copy(
-                isLoading = false,
-                isCheckingEmailVerification = true
-            )
-
+            state = state.copy(isLoading = false, isCheckingEmailVerification = true, generalError = null)
             startEmailVerificationPolling(user.uid, targetEmail, onAutoLogout)
         } catch (e: Exception) {
-            Log.e("ProfileVM", "Error en cambio de email", e)
-            state = state.copy(isLoading = false)
             handleSaveError(e)
         }
     }
@@ -263,66 +231,54 @@ class ProfileViewModel @Inject constructor(
     private suspend fun processPasswordChange(user: FirebaseUser) : Boolean {
         return try {
             if (state.password.length < 6) {
-                state = state.copy(isLoading = false, passwordError = "Mínimo 6 caracteres")
+                state = state.copy(isLoading = false, generalError = "Mínimo 6 caracteres")
                 false
-            } else{
+            } else {
                 user.updatePassword(state.password).await()
                 true
             }
         } catch (e: Exception) {
-            Log.e("ProfileVM", "Error en cambio de contraseña", e)
-            state = state.copy(isLoading = false)
             handleSaveError(e)
             false
         }
     }
 
     private fun handleSaveError(e: Exception) {
-        Log.e("ProfileVM", "Error al guardar perfil", e)
         val msg = when {
             e is FirebaseAuthUserCollisionException -> "El email ya existe"
-            e.message?.contains("credential") == true -> "Contraseña incorrecta"
-            else -> "Error al guardar perfil"
+            e.message?.contains("credential") == true || e.message?.contains("password") == true -> "Contraseña incorrecta"
+            else -> "Error al actualizar perfil"
         }
         state = state.copy(isLoading = false, generalError = msg)
     }
 
-    private fun startEmailVerificationPolling(
-        uid: String,
-        targetEmail: String,
-        onVerified: () -> Unit
-    ) {
-        Log.d("ProfileVM", "Esperando verificación de: $targetEmail")
+    private fun startEmailVerificationPolling(uid: String, targetEmail: String, onVerified: () -> Unit) {
         verificationJob?.cancel()
         verificationJob = viewModelScope.launch {
+            val startTime = System.currentTimeMillis()
+            val timeout = 30000L
+            
             while (isActive) {
-                delay(3000)
-                val user = auth.currentUser
-                if (user == null) {
-                    Log.d("ProfileVM", "Usuario es null. Deteniendo polling.")
+                if (System.currentTimeMillis() - startTime > timeout) {
+                    state = state.copy(
+                        isCheckingEmailVerification = false,
+                        generalError = "Tiempo agotado esperando la verificación del correo."
+                    )
                     break
                 }
+                
+                delay(3000)
+                val user = auth.currentUser ?: break
                 if (performPollingTick(user, uid, targetEmail, onVerified)) break
             }
         }
     }
 
-    private suspend fun performPollingTick(
-        user: FirebaseUser,
-        uid: String,
-        targetEmail: String,
-        onVerified: () -> Unit
-    ): Boolean {
+    private suspend fun performPollingTick(user: FirebaseUser, uid: String, targetEmail: String, onVerified: () -> Unit): Boolean {
         return try {
             user.reload().await()
-            val currentAuthEmail = user.email ?: ""
-            Log.d(
-                "ProfileVM",
-                "Revisando Auth... Actual: $currentAuthEmail, Objetivo: $targetEmail"
-            )
-
-            if (currentAuthEmail.equals(targetEmail, ignoreCase = true)) {
-                completeVerification(uid, currentAuthEmail, onVerified)
+            if (user.email?.equals(targetEmail, ignoreCase = true) == true) {
+                completeVerification(uid, targetEmail, onVerified)
                 true
             } else false
         } catch (e: Exception) {
@@ -331,7 +287,6 @@ class ProfileViewModel @Inject constructor(
     }
 
     private suspend fun completeVerification(uid: String, email: String, onVerified: () -> Unit) {
-        Log.d("ProfileVM", "¡Confirmado! Sincronizando y cerrando sesión.")
         withContext(NonCancellable) {
             persistAllChanges(uid, email)
             auth.signOut()
@@ -342,48 +297,39 @@ class ProfileViewModel @Inject constructor(
     }
 
     private suspend fun handlePollingError(e: Exception, onVerified: () -> Unit): Boolean {
-        Log.e("ProfileVM", "Error en el polling de verificación", e)
-        return if (e is FirebaseAuthInvalidUserException) {
-            Log.d("ProfileVM", "Sesión invalidada tras verificación. Redirigiendo a Login.")
+        if (e is FirebaseAuthInvalidUserException) {
             withContext(NonCancellable) {
                 auth.signOut()
                 sessionDataStore.clearSession()
             }
             state = state.copy(shouldNavigateToWelcome = true, isCheckingEmailVerification = false)
             onVerified()
-            true
-        } else false
+            return true
+        }
+        return false
     }
 
     private fun isUsernameValid(): Boolean {
         return if (state.username.isBlank()) {
-            state = state.copy(usernameError = "Campo obligatorio")
+            state = state.copy(usernameError = "Campo obligatorio", generalError = "El nombre es obligatorio")
             false
         } else true
     }
 
     private suspend fun persistAllChanges(uid: String, emailToSave: String) {
-        Log.d("ProfileVM", "Persistiendo cambios en Firestore para el email: $emailToSave")
         val docRef = db.collection("users").document(uid)
         try {
             val snapshot = docRef.get().await()
             val currentProfile = snapshot.toObject(UserProfile::class.java)
-
             val updatedProfile = currentProfile?.copy(
                 email = emailToSave,
                 username = state.username,
                 photoUrl = state.photoUrl
-            ) ?: UserProfile(
-                email = emailToSave,
-                username = state.username,
-                photoUrl = state.photoUrl
-            )
-
+            ) ?: UserProfile(email = emailToSave, username = state.username, photoUrl = state.photoUrl)
             docRef.set(updatedProfile).await()
             sessionDataStore.saveSession(updatedProfile)
-            Log.d("ProfileVM", "Cambios guardados con éxito en base de datos")
         } catch (e: Exception) {
-            Log.e("ProfileVM", "Error persistiendo cambios: ${e.message}")
+            Log.e("ProfileVM", "Error en Firestore", e)
         }
     }
 
@@ -391,14 +337,30 @@ class ProfileViewModel @Inject constructor(
         originalUsername = state.username
         originalEmail = state.email
         originalPhotoUrl = state.photoUrl
-        state =
-            state.copy(isLoading = false, updateSuccess = true, currentPassword = "", password = "")
+        state = state.copy(
+            isLoading = false, 
+            updateSuccess = true, 
+            currentPassword = "", 
+            password = "",
+            hasUnsavedChanges = false
+        )
+    }
+
+    private suspend fun syncFirestoreEmail(uid: String, newEmail: String) {
+        withContext(NonCancellable) {
+            val docRef = db.collection("users").document(uid)
+            val doc = docRef.get().await()
+            val profile = doc.toObject(UserProfile::class.java)
+            profile?.let {
+                val updated = it.copy(email = newEmail)
+                docRef.set(updated).await()
+                sessionDataStore.saveSession(updated)
+            }
+        }
     }
 
     fun onBackRequested(onConfirmBack: () -> Unit) {
-        if (state.username != originalUsername || state.email != originalEmail ||
-            state.photoUrl != originalPhotoUrl || state.password.isNotEmpty()
-        ) {
+        if (state.hasUnsavedChanges) {
             state = state.copy(isDiscardDialogOpen = true)
         } else onConfirmBack()
     }
