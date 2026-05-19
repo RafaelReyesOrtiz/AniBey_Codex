@@ -1,14 +1,11 @@
 package com.example.anibey_codex_tfg.ui.navigation
 
-import androidx.compose.animation.core.EaseInOutQuart
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavController
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,54 +18,57 @@ import com.example.anibey_codex_tfg.ui.screens.lugares.LugaresScreen
 import com.example.anibey_codex_tfg.ui.screens.lugares.lugares_detail.LugarDetailScreen
 import com.example.anibey_codex_tfg.ui.screens.bestiario.BestiarioScreen
 import com.example.anibey_codex_tfg.ui.screens.bestiario.monstruo_detail.MonstruoDetailScreen
-import com.example.anibey_codex_tfg.ui.screens.biblioteca_hechizos.SpellDetailScreen
-import com.example.anibey_codex_tfg.ui.screens.biblioteca_hechizos.SpellListScreen
+import com.example.anibey_codex_tfg.ui.screens.grimorio.SpellDetailScreen
+import com.example.anibey_codex_tfg.ui.screens.grimorio.SpellListScreen
 import com.example.anibey_codex_tfg.ui.welcome.ui.WelcomeScreen
+
+// RESUMED significa que la pantalla está visible y activa.
+// Si el estado cambia porque ya se está navegando, el "if" bloquea pulsaciones extras.
+private fun NavController.navigateSafe(
+    route: Screen,
+    navOptionsBuilder: NavOptionsBuilder.() -> Unit = {}
+) {
+    if (currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+        navigate(route, navOptionsBuilder)
+    }
+}
+
+// Extensión para retroceder de forma segura evitando que salga la pantalla en blanco.
+private fun NavController.popBackStackSafe() {
+    if (currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+        popBackStack()
+    }
+}
+
 
 @Composable
 fun AnimaNavHost(
-    modifier : Modifier,
+    modifier: Modifier,
     startDestination: Screen = Screen.Welcome
 ) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
-        enterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { it },
-                animationSpec = tween(600, easing = EaseInOutQuart)
-            ) + fadeIn(animationSpec = tween(600))
-        },
-        exitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { -it },
-                animationSpec = tween(600, easing = EaseInOutQuart)
-            ) + fadeOut(animationSpec = tween(600))
-        },
-        popEnterTransition = {
-            slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = tween(600, easing = EaseInOutQuart)
-            ) + fadeIn(animationSpec = tween(600))
-        },
-        popExitTransition = {
-            slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(600, easing = EaseInOutQuart)
-            ) + fadeOut(animationSpec = tween(600))
-        }
+        startDestination = startDestination
     ) {
         composable<Screen.Welcome> {
             WelcomeScreen(
-                onLoginSelected = { navController.navigate(Screen.Login) },
-                onGuestSelected = { 
-                    navController.navigate(Screen.Home) {
+                onLoginSelected = {
+                    navController.navigateSafe(Screen.Login) {
                         launchSingleTop = true
                     }
                 },
-                onRegisterSelected = { navController.navigate(Screen.Register) },
+                onGuestSelected = {
+                    navController.navigateSafe(Screen.Home) {
+                        launchSingleTop = true
+                    }
+                },
+                onRegisterSelected = {
+                    navController.navigateSafe(Screen.Register) {
+                        launchSingleTop = true
+                    }
+                },
                 modifier = modifier
             )
         }
@@ -76,9 +76,9 @@ fun AnimaNavHost(
         composable<Screen.Login> {
             LoginScreen(
                 viewModel = hiltViewModel(),
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.popBackStackSafe() },
                 onLoginSuccess = {
-                    navController.navigate(Screen.Home) {
+                    navController.navigateSafe(Screen.Home) {
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -90,9 +90,9 @@ fun AnimaNavHost(
         composable<Screen.Register> {
             RegisterScreen(
                 viewModel = hiltViewModel(),
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.popBackStackSafe() },
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Home) {
+                    navController.navigateSafe(Screen.Home) {
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -104,14 +104,38 @@ fun AnimaNavHost(
         composable<Screen.Home> {
             HomeScreen(
                 viewModel = hiltViewModel(),
-                onNavigateToProfile = { navController.navigate(Screen.Profile) },
-                onNavigateToLogin = { navController.navigate(Screen.Login) },
-                onNavigateToRegister = { navController.navigate(Screen.Register) },
-                onNavigateToLugares = { navController.navigate(Screen.Lugares) },
-                onNavigateToBestiario = { navController.navigate(Screen.Bestiario) },
-                onNavigateToGrimorio = { navController.navigate(Screen.Grimorio) },
+                onNavigateToProfile = {
+                    navController.navigateSafe(Screen.Profile) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigateSafe(Screen.Login) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigateSafe(Screen.Register) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToLugares = {
+                    navController.navigateSafe(Screen.Lugares) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToBestiario = {
+                    navController.navigateSafe(Screen.Bestiario) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToGrimorio = {
+                    navController.navigateSafe(Screen.Grimorio) {
+                        launchSingleTop = true
+                    }
+                },
                 onLogout = {
-                    navController.navigate(Screen.Welcome) {
+                    navController.navigateSafe(Screen.Welcome) {
                         popUpTo(Screen.Home) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -122,9 +146,9 @@ fun AnimaNavHost(
         composable<Screen.Profile> {
             ProfileScreen(
                 viewModel = hiltViewModel(),
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.popBackStackSafe() },
                 onLogout = {
-                    navController.navigate(Screen.Welcome) {
+                    navController.navigateSafe(Screen.Welcome) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -135,24 +159,36 @@ fun AnimaNavHost(
         composable<Screen.Lugares> {
             LugaresScreen(
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() },
-                onLugarClick = { id -> navController.navigate(Screen.LugarDetail(id)) }
+                onBackClick = { navController.popBackStackSafe() },
+                onLugarClick = { id ->
+                    navController.navigateSafe(Screen.LugarDetail(id)) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
         composable<Screen.Bestiario> {
             BestiarioScreen(
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() },
-                onMonstruoClick = { id -> navController.navigate(Screen.MonstruoDetail(id)) }
+                onBackClick = { navController.popBackStackSafe() },
+                onMonstruoClick = { id ->
+                    navController.navigateSafe(Screen.MonstruoDetail(id)) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
         composable<Screen.Grimorio> {
             SpellListScreen(
-                onNavigateToDetail = { id -> navController.navigate(Screen.HechizoDetail(id)) },
+                onNavigateToDetail = { id ->
+                    navController.navigateSafe(Screen.HechizoDetail(id)) {
+                        launchSingleTop = true
+                    }
+                },
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStackSafe() }
             )
         }
 
@@ -170,7 +206,7 @@ fun AnimaNavHost(
             MonstruoDetailScreen(
                 monstruoId = detail.monstruoId,
                 viewModel = hiltViewModel(),
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStackSafe() }
             )
         }
 
@@ -178,7 +214,7 @@ fun AnimaNavHost(
             val detail = backStackEntry.toRoute<Screen.HechizoDetail>()
             SpellDetailScreen(
                 spellId = detail.spellId,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStackSafe() }
             )
         }
     }

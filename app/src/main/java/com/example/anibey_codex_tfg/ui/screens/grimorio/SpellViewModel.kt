@@ -1,4 +1,4 @@
-package com.example.anibey_codex_tfg.ui.screens.biblioteca_hechizos
+package com.example.anibey_codex_tfg.ui.screens.grimorio
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -58,7 +58,10 @@ class SpellViewModel @Inject constructor(
                             try {
                                 doc.toObject(Hechizo::class.java)
                             } catch (e: Exception) {
-                                Log.e("SpellViewModel", "Error al convertir el documento: ${e.message}")
+                                Log.e(
+                                    "SpellViewModel",
+                                    "Error al convertir el documento: ${e.message}"
+                                )
                                 null
                             }
                         }
@@ -81,7 +84,8 @@ class SpellViewModel @Inject constructor(
         db.collection("users").document(uid)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null && snapshot.exists()) {
-                    val grimorio = snapshot.get("grimorio") as? List<String>
+                    val grimorio =
+                        (snapshot.get("grimorio") as? List<*>)?.filterIsInstance<String>()
                     _grimorioIds.value = grimorio?.toSet() ?: emptySet()
                     actualizarUiState()
                 }
@@ -143,7 +147,9 @@ class SpellViewModel @Inject constructor(
                 val docRef = db.collection("users").document(uid)
                 val snapshot = docRef.get().await()
                 val currentGrimorio =
-                    snapshot.get("grimorio") as? MutableList<String> ?: mutableListOf()
+                    (snapshot.get("grimorio") as? MutableList<*>)
+                        ?.filterIsInstance<String>()
+                        ?.toMutableList() ?: mutableListOf()
 
                 if (currentGrimorio.contains(spellId)) currentGrimorio.remove(spellId)
                 else currentGrimorio.add(spellId)

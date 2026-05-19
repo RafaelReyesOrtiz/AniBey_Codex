@@ -1,4 +1,4 @@
-package com.example.anibey_codex_tfg.ui.screens.biblioteca_hechizos
+package com.example.anibey_codex_tfg.ui.screens.grimorio
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

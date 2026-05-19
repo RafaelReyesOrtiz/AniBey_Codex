@@ -1,4 +1,4 @@
-package com.example.anibey_codex_tfg.ui.screens.biblioteca_hechizos
+package com.example.anibey_codex_tfg.ui.screens.grimorio
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.AbsoluteCutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material3.*
@@ -116,7 +117,7 @@ fun SpellListContent(
                     selected = !onlyGrimorio,
                     onClick = { onToggleView(false) },
                     text = { Text("BIBLIOTECA", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
-                    icon = { Icon(Icons.Default.MenuBook, null, modifier = Modifier.size(20.dp)) }
+                    icon = { Icon(Icons.AutoMirrored.Filled.MenuBook, null, modifier = Modifier.size(20.dp)) }
                 )
                 Tab(
                     selected = onlyGrimorio,
