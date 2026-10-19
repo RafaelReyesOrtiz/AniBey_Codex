@@ -134,31 +134,20 @@ Las pruebas instrumentadas requieren un dispositivo o emulador conectado y puede
 
 ## Capturas de pantalla
 
-Las capturas completas están en `docs/screenshots/` y sus miniaturas, usadas en esta galería, en `docs/screenshots/thumbnails/`. Cada miniatura enlaza a la imagen completa. Para reemplazar una captura, conserva el nombre del archivo y actualiza también su miniatura. Se recomienda ocultar cualquier dato personal antes de publicarla.
+Las capturas completas están en `docs/screenshots/` y las miniaturas de esta galería en `docs/screenshots/thumbnails/`. Pulsa una miniatura para abrir la captura completa.
 
-### Bienvenida y acceso
-
-![Pantalla de bienvenida y acceso](docs/screenshots/bienvenida.jpg)
-
-### Inicio
-
-![Pantalla de inicio](docs/screenshots/inicio.jpg)
-
-### Lugares
-
-![Pantalla de lugares](docs/screenshots/lugares.jpg)
-
-### Bestiario
-
-![Pantalla del bestiario](docs/screenshots/bestiario.jpg)
-
-### Grimorio
-
-![Pantalla del grimorio](docs/screenshots/grimorio.jpg)
-
-### Perfil
-
-![Pantalla de perfil](docs/screenshots/perfil.jpg)
+<table>
+  <tr>
+    <td align="center"><a href="./docs/screenshots/bienvenida.jpg"><img src="./docs/screenshots/thumbnails/bienvenida.jpg" width="180" alt="Pantalla de bienvenida y acceso"></a><br><strong>Bienvenida y acceso</strong></td>
+    <td align="center"><a href="./docs/screenshots/inicio.jpg"><img src="./docs/screenshots/thumbnails/inicio.jpg" width="180" alt="Pantalla de inicio"></a><br><strong>Inicio</strong></td>
+    <td align="center"><a href="./docs/screenshots/lugares.jpg"><img src="./docs/screenshots/thumbnails/lugares.jpg" width="180" alt="Pantalla de lugares"></a><br><strong>Lugares</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="./docs/screenshots/bestiario.jpg"><img src="./docs/screenshots/thumbnails/bestiario.jpg" width="180" alt="Pantalla del bestiario"></a><br><strong>Bestiario</strong></td>
+    <td align="center"><a href="./docs/screenshots/grimorio.jpg"><img src="./docs/screenshots/thumbnails/grimorio.jpg" width="180" alt="Pantalla del grimorio"></a><br><strong>Grimorio</strong></td>
+    <td align="center"><a href="./docs/screenshots/perfil.jpg"><img src="./docs/screenshots/thumbnails/perfil.jpg" width="180" alt="Pantalla de perfil"></a><br><strong>Perfil</strong></td>
+  </tr>
+</table>
 
 ## Licencia y atribución
 
