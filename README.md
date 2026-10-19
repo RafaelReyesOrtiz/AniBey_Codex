@@ -12,7 +12,6 @@ Aplicación Android de consulta para **Anima Beyond Fantasy**, desarrollada como
 - [Configuración para desarrolladores](#configuración-para-desarrolladores)
 - [Cómo se organiza el proyecto](#cómo-se-organiza-el-proyecto)
 - [Tecnologías](#tecnologías)
-- [Pruebas](#pruebas)
 - [Capturas de pantalla](#capturas-de-pantalla)
 - [Licencia y atribución](#licencia-y-atribución)
 - [Contacto](#contacto)
@@ -114,27 +113,7 @@ La interfaz está construida con Jetpack Compose y sigue un enfoque MVVM: las pa
 - Coil para cargar imágenes.
 - JUnit, AndroidX Test y Espresso para pruebas.
 
-## Pruebas
-
-Para ejecutar las pruebas unitarias locales:
-
-**Windows (PowerShell):**
-
-```powershell
-.\gradlew.bat :app:testDebugUnitTest
-```
-
-**macOS o Linux:**
-
-```bash
-./gradlew :app:testDebugUnitTest
-```
-
-Las pruebas instrumentadas requieren un dispositivo o emulador conectado y pueden ejecutarse con `:app:connectedDebugAndroidTest`.
-
 ## Capturas de pantalla
-
-Las capturas completas están en `docs/screenshots/` y las miniaturas de esta galería en `docs/screenshots/thumbnails/`. Pulsa una miniatura para abrir la captura completa.
 
 <table>
   <tr>
